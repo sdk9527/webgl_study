@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw a Filled Circle with twgl.js</title>
+    <script src="https://twgljs.org/dist/4.x/twgl-full.min.js"></script>
+  </head>
+  <body>
+    <canvas id="c" width="480" height="480"></canvas>
+    <script>
+      const canvas = document.getElementById("c");
+      const gl = canvas.getContext("webgl");
+
+      if (!gl) {
+        alert("Unable to initialize WebGL. Your browser may not support it.");
+      }
+
+      const vs = `
+            attribute vec2 position;
+            void main() {
+                gl_Position = vec4(position, 0, 1);
+            }
+        `;
+
+      const fs = `
+            void main() {
+                gl_FragColor = vec4(1, 0, 0, 0.4); // Red color
+            }
+        `;
+
+      const program = twgl.createProgram(gl, [vs, fs]);
+
+      // 创建圆形的顶点数据
+      const radius = 0.5;
+      const angleStep = (Math.PI * 2) / 100; // 将圆分成100份
+      const positions = new Float32Array(100 * 2); // 100个圆周上的点 + 1个中心点
+      for (let i = 0; i < 100; i++) {
+        const angle = i * angleStep;
+        positions[i * 2] = radius * Math.cos(angle); // X坐标
+        positions[i * 2 + 1] = radius * Math.sin(angle); // Y坐标
+      }
+
+      const positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+
+      const positionLocation = gl.getAttribLocation(program, "position");
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+      function drawScene() {
+        gl.clearColor(0, 0, 0, 1); // Clear to black
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.useProgram(program);
+        // TRIANGLE_FAN模式会使用第一个顶点和后续的顶点创建一系列的三角形，这样可以填充圆形的内部。
+        gl.drawArrays(gl.TRIANGLE_FAN, 0, 101); // 使用TRIANGLE_FAN模式绘制填充圆形
+      }
+
+      drawScene();
+    </script>
+  </body>
+</html>

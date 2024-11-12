@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw a Triangle with twgl.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twgl.js/4.20.0/twgl-full.min.js"></script>
+    <script src="https://webglfundamentals.org/webgl/resources/webgl-lessons-ui.js"></script>
+  </head>
+  <body>
+    <canvas id="c" width="640" height="480"></canvas>
+    <div id="uiContainer">
+      <div id="ui">
+        <div id="x"></div>
+        <div id="y"></div>
+      </div>
+    </div>
+    <script>
+      const canvas = document.getElementById("c");
+      const gl = canvas.getContext("webgl");
+
+      if (!gl) {
+        alert("Unable to initialize WebGL. Your browser may not support it.");
+      }
+
+      const vs = `
+        attribute vec4 position;
+        uniform mat4 u_translation;
+
+            void main() {
+                gl_Position = u_translation*position;
+
+            }
+        `;
+
+      const fs = `
+            void main() {
+                gl_FragColor = vec4(1, 1, 1, 1); // White color
+            }
+        `;
+      console.log("twgl", twgl);
+      let translation = [0, 0, 0];
+      const program = twgl.createProgram(gl, [vs, fs]);
+      const positionBuffer = gl.createBuffer();
+
+      // Setup a ui.
+      webglLessonsUI.setupSlider("#x", {
+        slide: updatePosition(0),
+        max: gl.canvas.width,
+      });
+      webglLessonsUI.setupSlider("#y", {
+        slide: updatePosition(1),
+        max: gl.canvas.height,
+      });
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, -0.5, 0.5, 0]),
+        gl.STATIC_DRAW
+      );
+      const positionLocation = gl.getAttribLocation(program, "position");
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+      const translationLocation = gl.getUniformLocation(
+        program,
+        "u_translation"
+      );
+      // 绕顶点1旋转
+      function drawScene() {
+        gl.clearColor(0, 0, 0, 1); // Clear to black
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        // 设置平移
+        const translationMatrix = twgl.m4.translation(translation);
+        const modelViewMatrix = translationMatrix;
+        gl.useProgram(program);
+
+        gl.uniformMatrix4fv(translationLocation, false, modelViewMatrix);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      drawScene();
+
+      function updatePosition(index) {
+        return function (event, ui) {
+          translation[index] = ui.value * 0.001;
+          drawScene();
+        };
+      }
+    </script>
+  </body>
+</html>

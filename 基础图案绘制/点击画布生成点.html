@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../glUtils.js"></script>
+  </head>
+  <body>
+    <canvas id="webgl" width="600" height="400"></canvas>
+    <script>
+      const canvas = document.getElementById("webgl");
+      const gl = canvas.getContext("webgl");
+      const vs = `
+                  attribute vec2 a_position;
+                  void main(){
+                      gl_Position = vec4(a_position,0,1);
+                      gl_PointSize = 5.0;
+                  }
+              `;
+      const fs = `void main(){
+                      gl_FragColor = vec4(1,0.5,1,1);}`;
+      const program = initWebGL(gl, vs, fs);
+      // 创建点的数组缓冲区
+      const points = [];
+      let pointBuffer;
+
+      function updateBuffer() {
+        if (pointBuffer) {
+          gl.deleteBuffer(pointBuffer);
+        }
+        pointBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+        gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array(points),
+          gl.DYNAMIC_DRAW
+        );
+      }
+      canvas.addEventListener("click", (event) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        // 将点击位置转换为NDC空间
+        const ndcX = (x / canvas.width) * 2 - 1;
+        const ndcY = 1 - (y / canvas.height) * 2;
+        console.log("x,y", ndcX, ndcY);
+        // 添加新的点到数组
+        points.push(ndcX, ndcY);
+        // 更新缓冲区
+        updateBuffer();
+
+        gl.useProgram(program);
+        // 获取点的位置属性
+        const a_position = gl.getAttribLocation(program, "a_position");
+        gl.enableVertexAttribArray(a_position);
+        // 绘制点
+        gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.POINTS, 0, points.length / 2);
+      });
+    </script>
+  </body>
+</html>

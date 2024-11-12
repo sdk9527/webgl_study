@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Draw a Triangle with twgl.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twgl.js/4.20.0/twgl-full.min.js"></script>
+  </head>
+  <body>
+    <canvas id="c" width="640" height="480"></canvas>
+    <script>
+      const canvas = document.getElementById("c");
+      const gl = canvas.getContext("webgl");
+
+      if (!gl) {
+        alert("Unable to initialize WebGL. Your browser may not support it.");
+      }
+
+      const vs = `
+        attribute vec4 position;
+        uniform mat4 u_matrix;
+            void main() {
+                gl_Position = u_matrix * position;
+            }
+        `;
+
+      const fs = `
+            void main() {
+                gl_FragColor = vec4(1, 1, 1, 1); // White color
+            }
+        `;
+      console.log("twgl", twgl);
+      const program = twgl.createProgram(gl, [vs, fs]);
+
+      const positionBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-0.5, -0.5, 0, 0.5, -0.5, 0, -0.5, 0.5, 0]),
+        gl.STATIC_DRAW
+      );
+
+      const positionLocation = gl.getAttribLocation(program, "position");
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 0, 0);
+
+      const matrixLocation = gl.getUniformLocation(program, "u_matrix");
+      const rotationMatrix = twgl.m4.identity();
+
+      let then = 0;
+      // 绕顶点1旋转
+      function drawScene(time) {
+        gl.clearColor(0, 0, 0, 1); // Clear to black
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        const deltaTime = (time - then) / 1000.0;
+        then = time;
+        const angle = deltaTime * 1; // Convert time to radians
+        // 顶点1的位置（-0.5, -0.5, 0）,创建一个4x4的平移矩阵
+        const translateMatrix = twgl.m4.translation([-0.5, -0.5, 0]);
+        // 反转平移矩阵
+        const inverseTranslateMatrix = twgl.m4.inverse(translateMatrix);
+        twgl.m4.rotateZ(rotationMatrix, angle, rotationMatrix);
+        // 组合变换矩阵：平移-旋转-平移回原位
+        const modelViewMatrix = twgl.m4.multiply(
+          inverseTranslateMatrix,
+          twgl.m4.multiply(rotationMatrix, translateMatrix),
+          twgl.m4.identity()
+        );
+
+        gl.useProgram(program);
+        gl.uniformMatrix4fv(matrixLocation, false, modelViewMatrix);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        requestAnimationFrame(drawScene);
+      }
+
+      requestAnimationFrame(drawScene);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../glUtils.js"></script>
+  </head>
+  <body>
+    <canvas id="webgl" width="640" height="480"></canvas>
+    <script>
+      const canvas = document.getElementById("webgl");
+      const gl = canvas.getContext("webgl");
+      let vs = `
+                attribute vec4 a_position;
+                attribute vec4 a_color;
+                varying vec4 v_color;
+                void main(){
+                    gl_Position = a_position;
+                    v_color = a_color;
+                }
+            `;
+      let fs = `
+                  precision mediump float;
+                  varying vec4 v_color;
+                void main(){
+                    gl_FragColor = v_color;
+                  }`;
+      const program = initWebGL(gl, vs, fs);
+      const pointPos = [
+        -0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 0.5, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.5,
+        0.0, 0.0, 1.0, 1.0,
+      ];
+
+      const pointBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(pointPos),
+        gl.DYNAMIC_DRAW
+      );
+      gl.useProgram(program);
+      // 获取点的位置属性
+      const a_position = gl.getAttribLocation(program, "a_position");
+      const a_color = gl.getAttribLocation(program, "a_color");
+      gl.vertexAttribPointer(
+        a_position,
+        2,
+        gl.FLOAT,
+        false,
+        Float32Array.BYTES_PER_ELEMENT * 6,
+        0
+      );
+      // gl.vertexAttribPointer(index,size,type,normalized,stride,offset) 6个参数 第一个是位置 第二个是大小 第三个是类型 第四个是是否归一化 第五个是步长 第六个是偏移量
+      //stride参数：顶点之间的偏移量，通俗地讲，就是只每个顶点占据的大小。这里一个顶点使用了6个Float32类型的数据表示，所以每个顶点占据的空间大小则为：Float32Array.BYTES_PER_ELEMENT * 6
+      // offset参数：顶点属性数组中一部分字节的偏移量，这里我们以上面的代码为例，顶点的位置信息占据了两个数字(前两位为x、y，后四位为4个颜色值)，位置信息占据的大小为Float32Array.BYTES_PER_ELEMENT * 2,位置信息出现在每行的第一个，
+      // 所以偏移量为0。而顶点的颜色信息占据了4个数字，在每一行的颜色信息之前，有占据Float32Array.BYTES_PER_ELEMENT * 2大小的顶点位置信息，所以offset为Float32Array.BYTES_PER_ELEMENT * 2
+
+      gl.vertexAttribPointer(
+        a_color,
+        4,
+        gl.FLOAT,
+        false,
+        Float32Array.BYTES_PER_ELEMENT * 6,
+        Float32Array.BYTES_PER_ELEMENT * 2
+      );
+      gl.enableVertexAttribArray(a_position);
+      gl.enableVertexAttribArray(a_color);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    </script>
+  </body>
+</html>

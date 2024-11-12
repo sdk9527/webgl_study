@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="../glUtils.js"></script>
+  </head>
+  <body>
+    <canvas id="webgl" width="640" height="480"></canvas>
+    <script>
+      const canvas = document.getElementById("webgl");
+      const gl = canvas.getContext("webgl");
+      let vs = `
+                attribute vec4 a_position;
+                attribute vec4 a_color;
+                varying vec4 v_color;
+                void main(){
+                    gl_Position = a_position;
+                    v_color = a_color;
+                }
+            `;
+      let fs = `
+                  precision mediump float;
+                  varying vec4 v_color;
+                void main(){
+                    gl_FragColor = v_color;
+                  }`;
+      const program = initWebGL(gl, vs, fs);
+      gl.useProgram(program);
+
+      // 渐变三角形分离颜色、位置信息写法
+      const pointPos = [-0.5, 0.0, 0, 0.5, 0.0, 0, 0.0, 0.5, 0];
+      const pointColor = [
+        1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0,
+      ];
+      const pointBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(pointPos),
+        gl.DYNAMIC_DRAW
+      );
+      const colorBuffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array(pointColor),
+        gl.DYNAMIC_DRAW
+      );
+      // 获取点的位置属性
+      const a_position = gl.getAttribLocation(program, "a_position");
+      // 调用vertexAttribPointer之前必须先调用gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer)，将pointBuffer绑定到gl.ARRAY_BUFFER目标上。
+      gl.bindBuffer(gl.ARRAY_BUFFER, pointBuffer);
+      gl.vertexAttribPointer(
+        a_position,
+        2,
+        gl.FLOAT,
+        false,
+        Float32Array.BYTES_PER_ELEMENT * 2,
+        0
+      );
+      gl.enableVertexAttribArray(a_position);
+      const a_color = gl.getAttribLocation(program, "a_color");
+      gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+      // 调用vertexAttribPointer之前必须先调用gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer)，将colorBuffer绑定到gl.ARRAY_BUFFER目标上。
+      gl.vertexAttribPointer(
+        a_color,
+        4,
+        gl.FLOAT,
+        false,
+        Float32Array.BYTES_PER_ELEMENT * 4,
+        0
+      );
+      gl.enableVertexAttribArray(a_color);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    </script>
+  </body>
+</html>
