@@ -1,3 +1,5 @@
+<!-- 参考文章：https://juejin.cn/post/7221047453964861496-->
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -13,10 +15,18 @@
       const vec3 = glMatrix.vec3;
       const mat4 = glMatrix.mat4;
       function lookAt(cameraPos, targetPos) {
+        /**
+         * @description:
+         * @return {*}
+         */
         const z = vec3.create();
         const y = vec3.fromValues(0, 1, 0);
         const x = vec3.create();
         vec3.sub(z, cameraPos, targetPos);
+        /**
+         * @description:
+         * @return {*}
+         */
         vec3.normalize(z, z);
         vec3.cross(x, y, z);
         vec3.normalize(x, x);
@@ -63,7 +73,8 @@
         gl_Position = u_proj * u_viewInv * worldPos;
     } 
     `;
-      // 片元着色器
+      // 片元着色器 漫反射模型 diffuse=max(0,I·n)·(C_light·M_diffuse)
+      //其中 n是表面法线，I是指光源的单位方向，M_diffuse​是材质的漫反射颜色，C_light​是光源的颜色。我们在光源单位向量和法线做点乘后，我们增加了一个 max运算符，这是因为我们需要防止法线和光源的方向的点乘的结果为负值。
       const fragmentShader = `
     precision mediump float;
     varying vec3 v_color;
@@ -77,7 +88,7 @@
         vec3 lightDir = normalize(u_lightDir);
         vec3 viewDir = normalize(u_viewWorldPos - v_worldPos);
         vec3 r = 2.0 * dot(n, lightDir) * n - lightDir;
-        float LdotN = dot(lightDir, n);
+        float LdotN = dot(lightDir, n); //dot：向量点乘
         float RdotV = dot(viewDir, r);
         vec3 dColor = vec3(0.5);
         vec3 sColor = vec3(1.0);
@@ -235,7 +246,7 @@
 
       const worldMat = mat4.create();
       //   mat4.translate(worldMat, worldMat, [0, 0, 0]);
-      const lightDir = [0, 1, 18];
+      const lightDir = [0, 0, 0.5];
       let gloss = 32;
       const render = () => {
         gl.useProgram(program);
